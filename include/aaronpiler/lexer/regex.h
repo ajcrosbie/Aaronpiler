@@ -29,7 +29,7 @@ public:
     static Regex* makeAtom(char x);
     static Regex* makeStar(Regex* r);
     static Regex* makeConcat(Regex* l, Regex* r);
-    static Regex* makeOR(Regex* l, Regex* r);
+    static Regex* makeOr(Regex* l, Regex* r);
     static Regex* makeDiff(Regex* r, char x);
     
     // Instance methods

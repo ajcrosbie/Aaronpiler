@@ -50,7 +50,7 @@ Regex* Regex::makeConcat(Regex* left, Regex* right){
     return r;
 }
 
-Regex* Regex::makeOR(Regex* left, Regex* right){
+Regex* Regex::makeOr(Regex* left, Regex* right){
     Regex* r = new Regex();
     r->val = Or{left, right};
     return r;
