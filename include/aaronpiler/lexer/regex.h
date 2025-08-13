@@ -36,7 +36,7 @@ public:
     void derivative(char x);
     bool nullable();
     Regex* deepCopy() const;
-
+    
 private:
     RegexVariant val;
 };

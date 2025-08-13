@@ -9,7 +9,7 @@
 // The instance where this will not be true is that the value stored in the regex will change at the point of required evaluation. 
 
 #include <variant>
-#include "../../include/aaronpiler/lexer/regex.h"
+#include "aaronpiler/lexer/regex.h"
 
 // typedef struct{}Epsilon;
 // typedef struct{}EmptySet;
@@ -87,24 +87,23 @@ void Regex::derivative(char x) {
     }
     if (std::holds_alternative<Star>(val)) {
         Star s = std::get<Star>(val);
-            Regex* c = s.reg->deepCopy();
-            s.reg->derivative(x);
-            val = Concat{s.reg, c};
+        Regex* c = s.reg->deepCopy();
+        c->derivative(x);
+        val = Concat{c, Regex::makeStar(s.reg)};
         return;
     }
+
     if (std::holds_alternative<Concat>(val)) {
+        // D(lr) = D(l)r + v(l)D(r). 
         Concat c = std::get<Concat>(val);
-        c.left->derivative(x);
+        Regex* r = c.right->deepCopy();
         if (c.left->nullable()) {
-            // D(l·r) = D(l)·r + ε·D(r) if l is nullable
-            Regex* r = c.right->deepCopy();
+            c.left->derivative(x);
             c.right->derivative(x);
-            Regex* n = makeConcat(c.left, r);
-            val = Or{n, c.right};
+            val = Or{Regex::makeConcat(c.left, r), c.right};
             return;
         }
-        // D(l·r) = D(l)·r if l is not nullable
-
+        c.left->derivative(x);
         val = Concat{c.left, c.right};
         return;
     }
@@ -114,6 +113,7 @@ void Regex::derivative(char x) {
             o.left->derivative(x);
             o.right->derivative(x);
             val = Or{o.left, o.right};
+            return;
         }
         return;
     }
@@ -155,27 +155,27 @@ bool Regex::nullable() {
 }
 
 Regex* Regex::deepCopy() const {
-    Regex* copy = new Regex();
+    Regex* copy;
     
     if (std::holds_alternative<Epsilon>(val)) {
-        copy->val = Epsilon{};
+        copy = Regex::makeEpsilon();
     } else if (std::holds_alternative<EmptySet>(val)) {
-        copy->val = EmptySet{};
+        copy = Regex::makeEmptySet();
     } else if (std::holds_alternative<Atom>(val)) {
         Atom a = std::get<Atom>(val);
-        copy->val = Atom{a.atom};
+        copy = Regex::makeAtom(a.atom);
     } else if (std::holds_alternative<Star>(val)) {
         Star s = std::get<Star>(val);
-        copy->val = Star{s.reg->deepCopy()};
+        copy = Regex::makeStar(s.reg->deepCopy());
     } else if (std::holds_alternative<Concat>(val)) {
         Concat c = std::get<Concat>(val);
-        copy->val = Concat{c.left->deepCopy(), c.right->deepCopy()};
+        copy = Regex::makeConcat(c.left->deepCopy(), c.right->deepCopy());
     } else if (std::holds_alternative<Or>(val)) {
         Or o = std::get<Or>(val);
-        copy->val = Or{o.left->deepCopy(), o.right->deepCopy()};
+        copy = Regex::makeOr(o.left->deepCopy(), o.right->deepCopy());
     } else if (std::holds_alternative<Diff>(val)) {
         Diff d = std::get<Diff>(val);
-        copy->val = Diff{d.reg->deepCopy(), d.atom};
+        copy = Regex::makeDiff(d.reg->deepCopy(), d.atom);
     }
     
     return copy;
